@@ -7,12 +7,25 @@ use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AbsensiController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\RombelSiswaController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\AbsensiGuruController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Set tahun ajaran in session (central selector)
+Route::post('/set-tahun-ajaran', function (Request $request) {
+    $id = $request->input('id');
+    if ($id) {
+        session(['tahun_ajaran_id' => $id]);
+    } else {
+        session()->forget('tahun_ajaran_id');
+    }
+    return response()->json(['ok' => true]);
+})->name('tahun_ajaran.set');
 
 use App\Http\Controllers\DashboardController;
 
@@ -31,6 +44,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('siswa', SiswaController::class);
     Route::resource('rombel_siswa', RombelSiswaController::class);
     Route::resource('absensi', AbsensiController::class);
+    // resource route untuk absensi guru (web) — use underscore URI and route names 'absensi_guru.*'
+    Route::resource('absensi_guru', AbsensiGuruController::class);
     Route::resource('kelas', KelasController::class);
     Route::resource('tahun_ajaran', TahunAjaranController::class);
     Route::resource('user', UserController::class);
@@ -43,7 +58,8 @@ require __DIR__.'/auth.php';
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard');
 Route::get('/whatsapp', [\App\Http\Controllers\WhatsappController::class, 'index'])->name('whatsapp.index')->middleware('auth');
 Route::post('/whatsapp/send', [\App\Http\Controllers\WhatsappController::class, 'send'])->name('whatsapp.send')->middleware('auth');
-Route::get('/absensi/export/{type}', [\App\Http\Controllers\AbsensiController::class, 'export'])->name('absensi.export');
+// Route for exporting absensi (keperluan umum). Use RekapAbsensiController for class/month rekap exports below.
+Route::get('/absensi_guru/export/{type}', [\App\Http\Controllers\AbsensiGuruController::class, 'export'])->name('absensi_guru.export');
 Route::get('/whatsapp/status', [\App\Http\Controllers\WhatsappController::class, 'status'])->name('whatsapp.status');
 Route::get('/whatsapp/qr', [\App\Http\Controllers\WhatsappController::class, 'qr'])->name('whatsapp.qr');
 Route::post('/webhook/fonnte', [\App\Http\Controllers\WhatsappController::class, 'webhook'])->name('whatsapp.webhook');
@@ -57,6 +73,7 @@ Route::post('/set-password', [SetPasswordController::class, 'store'])->name('set
 
 #testing export absensi
 Route::get('/absensi/export/{type}', [App\Http\Controllers\RekapAbsensiController::class, 'export'])->name('absensi.export');
+Route::get('/rekap/absensi-guru/export/{type}', [App\Http\Controllers\RekapAbsensiGuruController::class, 'export'])->name('rekap.absensi-guru.export');
 #testing export rombel siswa
 Route::get('/rombel_siswa/export/pdf', [App\Http\Controllers\RombelSiswaController::class, 'exportPdf'])->name('rombel_siswa.export.pdf');
 

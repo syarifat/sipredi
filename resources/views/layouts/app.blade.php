@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SMP Islam Tulungagung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>SMPI AL HIDAYAH SAMIR</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
     /* Hilangkan icon bawaan select di semua browser */

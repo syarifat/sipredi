@@ -2,7 +2,7 @@
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300">
         <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-4">
             <div class="flex flex-col items-center mb-4">
-                <img src="{{ asset('logo.svg') }}" alt="Logo" class="h-10 mb-1">
+                <img src="{{ asset('logo.png') }}" alt="Logo" class="h-10 mb-1">
                 <span class="text-xl font-bold text-cyan-700 text-center leading-tight">
                     siPredi <span class="text-yellow-500">SMP ISLAM</span> TULUNGAGUNG
                 </span>
@@ -25,12 +25,12 @@
                     <x-input-error :messages="$errors->get('name')" class="mt-1" />
                 </div>
 
-                <!-- Email Address -->
+                <!-- Username (ganti Email) -->
                 <div class="mb-2">
-                    <x-input-label for="email" :value="__('Email')" />
-                    <x-text-input id="email" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500 text-sm mt-1"
-                        type="email" name="email" :value="old('email')" required autocomplete="username" />
-                    <x-input-error :messages="$errors->get('email')" class="mt-1" />
+                    <x-input-label for="username" :value="__('Username')" />
+                    <x-text-input id="username" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500 text-sm mt-1"
+                        type="text" name="username" :value="old('username')" required autocomplete="username" />
+                    <x-input-error :messages="$errors->get('username')" class="mt-1" />
                 </div>
 
                 <!-- Password -->

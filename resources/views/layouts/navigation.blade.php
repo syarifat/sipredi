@@ -1,4 +1,4 @@
-<div x-data="{ sidebar: true, profileOpen: false, whatsappOpen: false }" class="flex min-h-screen">
+<div x-data="{ sidebar: (localStorage.getItem('sidebar') === 'true') ? true : false, profileOpen: false, whatsappOpen: false }" class="flex min-h-screen">
     <!-- Sidebar -->
     <aside
         x-show="sidebar"
@@ -14,18 +14,22 @@
         <!-- Logo & Judul -->
         <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
             <a href="{{ route('dashboard') }}">
-                <img src="{{ asset('logo.svg') }}" alt="Logo" class="h-10 w-10">
+                <img src="{{ asset('logo.png') }}" alt="Logo" class="h-10 w-10">
             </a>
-            <span class="font-bold text-lg text-gray-700">Absensi SMP</span>
+            <span class="font-bold text-lg text-gray-700">siPredi</span>
         </div>
         <!-- Navigation Links -->
         @php
             $role = Auth::user()->role ?? '';
+            // Treat legacy 'superadmin' as 'admin' in UI logic
+            if ($role === 'superadmin') {
+                $role = 'admin';
+            }
         @endphp
 
-        <nav class="flex-1 py-6 px-4 flex flex-col gap-2">
-            {{-- Menu untuk superadmin dan admin (full access) --}}
-            @if($role === 'superadmin' || $role === 'admin')
+    <nav class="flex-1 py-6 px-4 flex flex-col gap-2" @click="if($event.target.closest('a')) localStorage.setItem('sidebar', false)">
+            {{-- Menu untuk admin (full access) --}}
+            @if($role === 'admin')
                 <a href="{{ route('dashboard') }}"
                    class="flex items-center gap-2 text-gray-700 hover:text-orange-500 hover:bg-orange-100/60 font-medium px-3 py-2 rounded transition group">
                     <!-- Dashboard Icon -->
@@ -40,7 +44,16 @@
                     <svg class="h-5 w-5 text-black group-hover:text-orange-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Absensi
+                    Absensi Siswa
+                </a>
+                <a href="{{ route('absensi_guru.index') }}"
+                   class="flex items-center gap-2 text-gray-700 hover:text-orange-500 hover:bg-orange-100/60 font-medium px-3 py-2 rounded transition group">
+                    <!-- Absensi Guru Icon -->
+                    <svg class="h-5 w-5 text-black group-hover:text-orange-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6H4v12h16V6z" />
+                    </svg>
+                    Absensi Guru
                 </a>
                 <a href="{{ route('rombel_siswa.index') }}"
                    class="flex items-center gap-2 text-gray-700 hover:text-orange-500 hover:bg-orange-100/60 font-medium px-3 py-2 rounded transition group">
@@ -169,7 +182,16 @@
                     <svg class="h-5 w-5 text-black group-hover:text-orange-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Absensi
+                    Absensi Siswa
+                </a>
+                <a href="{{ route('absensi_guru.index') }}"
+                   class="flex items-center gap-2 text-gray-700 hover:text-orange-500 hover:bg-orange-100/60 font-medium px-3 py-2 rounded transition group">
+                    <!-- Absensi Guru Icon -->
+                    <svg class="h-5 w-5 text-black group-hover:text-orange-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6H4v12h16V6z" />
+                    </svg>
+                    Absensi Guru
                 </a>
                 <a href="{{ route('rombel_siswa.index') }}"
                    class="flex items-center gap-2 text-gray-700 hover:text-orange-500 hover:bg-orange-100/60 font-medium px-3 py-2 rounded transition group">
@@ -193,32 +215,82 @@
         <!-- Profile Section -->
         <!-- <div class="px-6 py-4 border-t border-gray-100 flex items-center gap-2">
             <span class="bg-orange-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">
-                {{ strtoupper(substr(Auth::user()->name,0,1)) }}
+                {{ strtoupper(substr(Auth::user()->role ?? '',0,1)) }}
             </span>
             <div>
-                <div class="text-gray-700 font-medium">{{ Auth::user()->name }}</div>
+                <div class="text-gray-700 font-medium">{{ ucfirst(Auth::user()->role ?? '') }}</div>
                 <div class="text-xs text-gray-400">{{ Auth::user()->email }}</div>
             </div>
         </div> -->
     </aside>
     <!-- Main Content -->
     <div :class="sidebar ? 'ml-64' : 'ml-0'"
-         class="flex-1 flex flex-col transition-all duration-300 ease-in-out">
-        <!-- Topbar -->
-        <header class="flex items-center justify-between bg-white border-b border-gray-200 px-4 h-14">
+         class="flex-1 flex flex-col transition-all duration-300 ease-in-out pt-14">
+    <!-- Topbar (fixed to viewport) -->
+    <header :style="sidebar ? 'left:16rem; right:0; width:calc(100% - 16rem);' : 'left:0; right:0; width:100%;'"
+        class="fixed top-0 z-20 flex items-center justify-between bg-white border-b border-gray-200 px-4 h-14">
             <!-- Sidebar Toggle Button -->
-            <button @click="sidebar = !sidebar" class="text-gray-700 hover:bg-gray-100 rounded p-2">
+            <button @click="sidebar = !sidebar; localStorage.setItem('sidebar', sidebar)" class="text-gray-700 hover:bg-gray-100 rounded p-2">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
-            <!-- Profile Dropdown -->
-            <div class="relative">
+            <!-- Tahun Ajaran selector + Profile Dropdown -->
+            <div class="flex items-center gap-4">
+                {{-- Tahun Ajaran selector (central filter) --}}
+                @php
+                    // Prioritize session value over active flag
+                    $navTahun = session('tahun_ajaran_id');
+                    if (!$navTahun) {
+                        $navTahun = \App\Models\TahunAjaran::where('aktif', true)->first()?->id ?? null;
+                    }
+                    $navTahunList = \App\Models\TahunAjaran::orderBy('nama','desc')->get();
+                    $currentTahunAjaran = $navTahunList->first(fn($ta) => (string)$ta->id === (string)$navTahun);
+                @endphp
+                <div x-data="{ tahunAjaranOpen: false }" class="relative">
+                    <button @click="tahunAjaranOpen = !tahunAjaranOpen" 
+                            class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 transition">
+                        <span class="bg-orange-100 text-orange-600 rounded px-2 py-1 text-sm font-medium">
+                            {{ $currentTahunAjaran ? "{$currentTahunAjaran->nama} - {$currentTahunAjaran->semester}" : "Pilih Tahun Ajaran" }}
+                        </span>
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 20 20">
+                            <path d="M5.5 8l4.5 4.5L14.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div x-show="tahunAjaranOpen" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         @click.away="tahunAjaranOpen = false"
+                         class="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded shadow-lg z-50">
+                        @foreach($navTahunList as $ta)
+                            <button onclick="changeTahunAjaran('{{ $ta->id }}')"
+                                    class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center justify-between">
+                                <span>{{ $ta->nama }} - {{ $ta->semester }}</span>
+                                @if($ta->aktif)
+                                    <span class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Aktif</span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                @push('scripts')
+                <script>
+                    console.log('Current navTahun:', {!! json_encode($navTahun) !!});
+                </script>
+                @endpush
+
+                <!-- Profile Dropdown -->
+                <div class="relative">
                 <button @click="profileOpen = !profileOpen" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 transition">
                     <span class="bg-orange-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">
-                        {{ strtoupper(substr(Auth::user()->name,0,1)) }}
+                        {{ strtoupper(substr(Auth::user()->role ?? '',0,1)) }}
                     </span>
-                    <span class="text-gray-700 font-medium">{{ Auth::user()->name }}</span>
+                    <span class="text-gray-700 font-medium">{{ ucfirst(Auth::user()->role ?? '') }}</span>
                     <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 20 20">
                         <path d="M5.5 8l4.5 4.5L14.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -231,17 +303,64 @@
                      x-transition:leave-end="opacity-0 scale-95"
                      @click.away="profileOpen = false"
                      class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
-                    <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                    <!-- <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a> -->
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">Log Out</button>
                     </form>
                 </div>
             </div>
+
+            <script>
+                async function changeTahunAjaran(id) {
+                    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+                    if (!tokenMeta) {
+                        console.error('CSRF token tidak ditemukan');
+                        alert('Error: CSRF token tidak ditemukan');
+                        return;
+                    }
+                    const token = tokenMeta.getAttribute('content');
+                    
+                    try {
+                        const response = await fetch("{{ route('tahun_ajaran.set') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ id: id || null })
+                        });
+                        
+                        if (!response.ok) {
+                            const text = await response.text();
+                            console.error('Response tidak OK:', response.status, text);
+                            alert('Gagal mengubah tahun ajaran: ' + response.status);
+                            return;
+                        }
+                        
+                        const result = await response.json();
+                        if (result.ok) {
+                            window.location.reload();
+                        } else {
+                            console.error('Response format tidak sesuai:', result);
+                            alert('Gagal mengubah tahun ajaran: format response tidak sesuai');
+                        }
+                    } catch (err) {
+                        console.error('Error saat mengubah tahun ajaran:', err);
+                        alert('Gagal mengubah tahun ajaran: ' + err.message);
+                    }
+                }
+            </script>
         </header>
         <!-- Page Content -->
-        <main class="flex-1 bg-gray-50 p-4">
-            @yield('content')
+        <main class="flex-1 bg-gray-50">
+            <!-- Container untuk konten dengan margin tambahan dari topbar -->
+            <div class="p-4 mt-16 md:p-8 md:mt-16">
+                <br>
+                <br>
+                @yield('content')
+            </div>
         </main>
     </div>
 </div>

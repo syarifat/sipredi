@@ -1,9 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $isGuru = auth()->user()->role === 'guru';
+@endphp
 <div class="max-w-4xl mx-auto mt-8">
     <h2 class="text-xl font-bold mb-4">Daftar Siswa</h2>
+    @if(!$isGuru)
     <a href="{{ route('siswa.create') }}" class="bg-green-400 hover:bg-green-500 text-white font-semibold px-4 py-2 rounded-lg shadow mb-4 inline-block transition duration-200">Tambah Siswa</a>
+    @endif
     
     <!-- Search Box -->
     <div class="relative mb-4">
@@ -22,18 +27,31 @@
     <table class="min-w-full border-2 border-orange-400 rounded-lg overflow-hidden shadow border-collapse">
         <thead>
             <tr class="bg-orange-500 text-white border-b-2 border-orange-400 rounded-none">
+                <th class="px-4 py-2 text-center font-semibold">No</th>
                 <th class="px-4 py-2 text-center font-semibold">NIS</th>
                 <th class="px-4 py-2 text-left font-semibold">Nama</th>
+                <th class="px-4 py-2 text-center font-semibold">Jenis Kelamin</th>
                 <th class="px-4 py-2 text-center font-semibold">No HP Ortu</th>
+                <th class="px-4 py-2 text-center font-semibold">Status</th>
+                @if(!$isGuru)
                 <th class="px-4 py-2 text-center font-semibold">Aksi</th>
+                @endif
             </tr>
         </thead>
         <tbody id="siswa-tbody">
             @foreach($siswa as $i => $row)
             <tr class="{{ $i % 2 == 0 ? 'bg-white' : 'bg-gray-100' }} border-b border-orange-200 hover:bg-orange-50">
+                <td class="px-4 py-2 text-center">
+                    {{ (isset($siswa) && $siswa->firstItem()) ? $siswa->firstItem() + $i : $loop->iteration }}
+                </td>
                 <td class="px-4 py-2 text-center">{{ $row->nis }}</td>
                 <td class="px-4 py-2 text-left">{{ $row->nama }}</td>
+                <td class="px-4 py-2 text-center">
+                    {{ $row->jenis_kelamin == 'L' ? 'Laki-laki' : ($row->jenis_kelamin == 'P' ? 'Perempuan' : '-') }}
+                </td>
                 <td class="px-4 py-2 text-center">{{ $row->no_hp_ortu }}</td>
+                <td class="px-4 py-2 text-center">{{ $row->status ? ucfirst($row->status) : '-' }}</td>
+                @if(!$isGuru)
                 <td class="px-4 py-2 text-center">
                     <a href="{{ route('siswa.edit', $row) }}" class="text-blue-600">Edit</a>
                     <form action="{{ route('siswa.destroy', $row) }}" method="POST" class="inline">
@@ -41,6 +59,7 @@
                         <button type="submit" class="text-pink-600 ml-2" onclick="return confirm('Hapus siswa ini?')">Hapus</button>
                     </form>
                 </td>
+                @endif
             </tr>
             @endforeach
         </tbody>
@@ -60,10 +79,17 @@ function fetchSiswa() {
         .then(data => {
             let tbody = '';
             data.forEach((row, i) => {
+                const nomor = i + 1;
+                const jenis = row.jenis_kelamin === 'L' ? 'Laki-laki' : (row.jenis_kelamin === 'P' ? 'Perempuan' : '-');
+                const status = row.status ? (row.status.charAt(0).toUpperCase() + row.status.slice(1)) : '-';
                 tbody += `<tr class="${i % 2 == 0 ? 'bg-white' : 'bg-gray-100'} border-b border-orange-200 hover:bg-orange-50">
+                    <td class="px-4 py-2 text-center">${nomor}</td>
                     <td class="px-4 py-2 text-center">${row.nis ?? '-'}</td>
                     <td class="px-4 py-2 text-left">${row.nama ?? '-'}</td>
+                    <td class="px-4 py-2 text-center">${jenis}</td>
+                    <td class="px-4 py-2 text-center">${status}</td>
                     <td class="px-4 py-2 text-center">${row.no_hp_ortu ?? '-'}</td>
+                    ${!{{ $isGuru }} ? `
                     <td class="px-4 py-2 text-center">
                         <a href="/siswa/${row.id}/edit" class="text-blue-600">Edit</a>
                         <form action="/siswa/${row.id}" method="POST" class="inline" onsubmit="return confirm('Hapus siswa ini?')">
@@ -71,6 +97,7 @@ function fetchSiswa() {
                             <button type="submit" class="text-pink-600 ml-2">Hapus</button>
                         </form>
                     </td>
+                    ` : ''}
                 </tr>`;
             });
             document.getElementById('siswa-tbody').innerHTML = tbody;
